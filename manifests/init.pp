@@ -168,7 +168,7 @@ class expedition (
   ~> group{'expedition':
     ensure  => present,
     members => ['www-data', 'expedition'],
-    reqiure => Class['apache']
+    require => Class['apache']
   }
   ~> user { 'expedition':
     groups => ['expedition', 'www-data'],
