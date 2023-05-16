@@ -194,7 +194,7 @@ class expedition (
   ~> file_line { 'db_password':
     path  => '/home/userSpace/userDefinitions.php',
     line  => "define ('DBPass', '${mysql_root_password}');",
-    match => '^define (\'DBPass',
+    match => 'DBPass',
     }
     ~> service { 'panReadOrders':
       ensure => running,
