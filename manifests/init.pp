@@ -79,7 +79,7 @@ class expedition (
     owner  => 'www-data',
     group  => 'www-data',
   }
-  package { ['python3', 'python3-pip', 'liblist-moreutils-perl', 'openjdk-8-jre-headless', 'libjpeg-dev', 'zlib1g-dev', 'zip']:
+  package { ['python3', 'python3-pip', 'liblist-moreutils-perl', 'openjdk-8-jre-headless', 'libjpeg-dev', 'zlib1g-dev', 'zip', 'libfreetype-dev']:
     ensure => installed,
   }
   package { 'Pillow':
@@ -201,6 +201,9 @@ class expedition (
     }
     ~> exec{'/usr/local/bin/pip3 install /var/www/html/OS/BPA/best_practice_assessment_ngfw_pano-master.zip --upgrade':
       unless => '/usr/bin/test -f /usr/local/lib/python3.10/dist-packages/bpa/publishers/formats/pdf/data/app_user_meta.json'
+    }
+    ~> file{'/home/userSpace/environmentParameters.php':
+      ensure => absent
     }
     ~> service { 'panReadOrders':
       ensure => running,
