@@ -1,0 +1,12 @@
+[Unit]
+Description=panReadOrders
+
+[Service]
+Type=simple
+ExecStart=php /var/www/html/console/messaging/readOrders.php
+Restart=no
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target
