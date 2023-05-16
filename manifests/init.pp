@@ -166,7 +166,9 @@ class expedition (
     require  => File['/data/RealTimeUpdates.sql']
   }
   ~> group{'expedition':
-    ensure => present
+    ensure  => present,
+    members => ['www-data', 'expedition'],
+    reqiure => Class['apache']
   }
   ~> user { 'expedition':
     groups => ['expedition', 'www-data'],
@@ -196,6 +198,9 @@ class expedition (
     path  => '/home/userSpace/userDefinitions.php',
     line  => "define ('DBPass', '${mysql_root_password}');",
     match => 'DBPass',
+    }
+    ~> exec{'/usr/local/bin/pip3 install /var/www/html/OS/BPA/best_practice_assessment_ngfw_pano-master.zip --upgrade':
+      unless => '/usr/bin/test -f /usr/local/lib/python3.10/dist-packages/bpa/publishers/formats/pdf/data/app_user_meta.json'
     }
     ~> service { 'panReadOrders':
       ensure => running,
