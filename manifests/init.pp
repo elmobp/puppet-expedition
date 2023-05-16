@@ -39,9 +39,10 @@ class expedition (
     },
   }
   class { 'php::apache_config':
-    settings => {
+    settings  => {
       'PHP/mysqli.reconnect' => 'On',
     },
+    require => Class['apache::mod::php']
   }
   apt::source { 'ubuntu':
     location => 'http://au.archive.ubuntu.com/ubuntu/',
