@@ -191,6 +191,11 @@ class expedition (
     ssl_key          => '/etc/ssl/private/key.pem',
     fallbackresource => '/index.php',
   }
+  ~> file_line{'mysqli':
+    path   => '/etc/php/7.0/apache2/php.ini',
+    ensure => absent
+    match  => '^mysqli.reconnect = Off'
+  }
   ~> package { ['expedition-beta', 'expeditionml-dependencies-beta']:
     ensure => present,
   }
@@ -198,6 +203,11 @@ class expedition (
     path  => '/home/userSpace/userDefinitions.php',
     line  => "define ('DBPass', '${mysql_root_password}');",
     match => 'DBPass',
+    }
+    ~> file{'/PALogs':
+      ensure => directory,
+      owner  => 'www-data',
+      group  => 'www-data'
     }
     ~> exec{'/usr/local/bin/pip3 install /var/www/html/OS/BPA/best_practice_assessment_ngfw_pano-master.zip --upgrade':
       unless => '/usr/bin/test -f /usr/local/lib/python3.10/dist-packages/bpa/publishers/formats/pdf/data/app_user_meta.json'
