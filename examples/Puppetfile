@@ -1,0 +1,11 @@
+forge "https://forge.puppetlabs.com"
+
+mod 'puppetlabs/apache', '9.1.2'
+mod 'puppetlabs/mysql', '13.2.0'
+mod 'puppet/php', '8.2.0'
+mod 'puppet/python', '6.4.0'
+mod 'puppetlabs/stdlib', '8.5.0'
+mod 'puppet/rabbitmq', '12.1.0'
+mod 'puppetlabs-apt', '9.0.2'
+mod 'elmobp-expedition', :git => 'git@github.com:elmobp/puppet-expedition.git'
+
