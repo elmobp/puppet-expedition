@@ -194,7 +194,8 @@ class expedition (
   ~> file_line{'mysqli':
     path   => '/etc/php/7.0/apache2/php.ini',
     ensure => absent
-    match  => '^mysqli.reconnect = Off'
+    match  => '^mysqli.reconnect = Off',
+    notify => Service['apache2']
   }
   ~> package { ['expedition-beta', 'expeditionml-dependencies-beta']:
     ensure => present,
