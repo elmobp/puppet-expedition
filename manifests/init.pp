@@ -5,56 +5,45 @@ class expedition (
   String $ssl_key = '---BEGIN--',
   String $vhost_name = $facts['networking']['fqdn'],
 ) {
-  Class['Apt::Update'] -> Package<| |>
-  # Classes to include
-  include apt
-  include mysql::server
-  include rabbitmq
-  include apache
-  include apache::mod::php
-  include php
-  include php::globals
-  include php::apache_config
-  include python
-
   class { 'apache':
     default_mods => ['rewrite'],
     mpm_module   => 'prefork',
   }
-  ~> class { 'apache::mod::php':
+  class { 'apache::mod::php':
     php_version => '7.0',
+    require     => Class['php']
   }
-  ~> class { 'php::globals':
+  class { 'php::globals':
     php_version => '7.0',
     config_root => '/etc/php/7.0',
   }
-  ~> class { 'php':
+  class { 'php':
     manage_repos => true,
     settings     => {
       'PHP/mysqli.reconnect' => 'On',
-      extensions             => {
-        'bcmath'   => {},
-        'mbstring' => {},
-        'gd'       => {},
-        'soap'     => {},
-        'zip'      => {},
-        'xml'      => {},
-        'curl'     => {},
-        'bz2'      => {},
-        'mcrypt'   => {},
-        'ldap'     => {},
-        'mysql'    => {},
-        'radius'   => {},
-        'opcache'  => { 'zend' => true },
-      },
+    },
+    extensions   => {
+      'bcmath'   => {},
+      'mbstring' => {},
+      'gd'       => {},
+      'soap'     => {},
+      'zip'      => {},
+      'xml'      => {},
+      'curl'     => {},
+      'bz2'      => {},
+      'mcrypt'   => {},
+      'ldap'     => {},
+      'mysql'    => {},
+      'radius'   => {},
+      'opcache'  => { 'zend' => true },
     },
   }
-  ~> class { 'php::apache_config':
+  class { 'php::apache_config':
     settings => {
       'PHP/mysqli.reconnect' => 'On',
     },
   }
-  ~> apt::source { 'ubuntu':
+  apt::source { 'ubuntu':
     location => 'http://au.archive.ubuntu.com/ubuntu/',
     repos    => 'main restricted universe multiverse',
     release  => $facts['os']['distro']['codename'],
@@ -62,7 +51,7 @@ class expedition (
       'src' => true,
     },
   }
-  ~> apt::source { 'ubuntu-updates':
+  apt::source { 'ubuntu-updates':
     location => 'http://au.archive.ubuntu.com/ubuntu/',
     release  => "${facts['os']['distro']['codename']}-updates",
     repos    => 'main restricted universe multiverse',
@@ -70,7 +59,7 @@ class expedition (
       'src' => true,
     },
   }
-  ~> apt::source { 'ubuntu-security':
+  apt::source { 'ubuntu-security':
     location => 'http://au.archive.ubuntu.com/ubuntu/',
     release  => "${facts['os']['distro']['codename']}-security",
     repos    => 'main restricted universe multiverse',
@@ -78,26 +67,26 @@ class expedition (
       'src' => true,
     },
   }
-  ~> apt::source { 'conversionupdates.paloaltonetworks.com':
+  apt::source { 'conversionupdates.paloaltonetworks.com':
     location       => 'https://conversionupdates.paloaltonetworks.com/',
     release        => '',
     repos          => 'expedition-updates/',
     allow_unsigned => true,
   }
-  ~> file { '/home/userSpace':
+  file { '/home/userSpace':
     ensure => directory,
     owner  => 'www-data',
-    user   => 'www-data',
+    group  => 'www-data',
   }
   package { ['python3', 'python3-pip', 'liblist-moreutils-perl', 'openjdk-8-jre-headless', 'libjpeg-dev', 'zlib1g-dev', 'zip']:
     ensure => installed,
   }
-  ~> package { 'Pillow':
+  package { 'Pillow':
     ensure   => '5.4.1',
     provider => 'pip3',
     require  => Package['python3'],
   }
-  ~> package { ['chardet','lxml','matplotlib']:
+  package { ['chardet','lxml','matplotlib']:
     ensure   => present,
     provider => 'pip3',
   }
@@ -105,9 +94,15 @@ class expedition (
     ensure  => file,
     content => $ssl_certificate,
   }
-  ~> file { '/etc/ssl/private/key.pem':
+  file { '/etc/ssl/private/key.pem':
     ensure  => file,
     content => $ssl_key,
+  }
+  file{'/data':
+    ensure  => directory,
+    owner   => 'www-data',
+    group   => 'www-data',
+    require => Class['apache']
   }
   ~> file { '/data/pandb.sql':
     ensure => file,
@@ -133,15 +128,7 @@ class expedition (
     ensure => link,
     target => '/lib/systemd/system/panReadOrders.service',
   }
-  ~> file { '/etc/ssl/certs/cert.pem':
-    ensure  => file,
-    content => $ssl_cert,
-  }
-  ~> file { '/etc/ssl/private/key.pem':
-    ensure  => file,
-    content => $ssl_key,
-  }
-  ~> class { 'mysql::server':
+  class { 'mysql::server':
     root_password           => $mysql_root_password,
     managed_dirs            => undef,
     remove_default_accounts => true,
@@ -153,17 +140,32 @@ class expedition (
       },
     },
   }
-  ~> mysql::db { 'pandb':
-    sql => ['/data/pandb.sql'],
+  mysql::db { 'pandb':
+    sql      => ['/data/pandb.sql'],
+    user     => 'palo',
+    password => 'palo',
+    require  => File['/data/pandb.sql']
   }
-  ~> mysql::db { 'pandbRBAC':
-    sql => ['/data/pandbRBAC.sql'],
+  mysql::db { 'pandbRBAC':
+    sql      => ['/data/pandbRBAC.sql'],
+    user     => 'palo',
+    password => 'palo',
+    require  => File['/data/pandbRBAC.sql']
   }
-  ~> mysql::db { 'BestPractices':
-    sql => ['/data/BestPractices.sql'],
+  mysql::db { 'BestPractices':
+    sql      => ['/data/BestPractices.sql'],
+    user     => 'palo',
+    password => 'palo',
+    require  => File['/data/BestPractices.sql']
   }
-  ~> mysql::db { 'RealTimeUpdates':
-    sql => ['/data/RealTimeUpdates.sql'],
+  mysql::db { 'RealTimeUpdates':
+    sql      => ['/data/RealTimeUpdates.sql'],
+    user     => 'palo',
+    password => 'palo',
+    require  => File['/data/RealTimeUpdates.sql']
+  }
+  ~> group{'expedition':
+    ensure => present
   }
   ~> user { 'expedition':
     groups => ['expedition', 'www-data'],
@@ -183,7 +185,7 @@ class expedition (
     docroot          => '/var/www/html',
     ssl              => true,
     ssl_cert         => '/etc/ssl/certs/cert.pem',
-    ssl_key          => '/etc/ssl/private/key.key',
+    ssl_key          => '/etc/ssl/private/key.pem',
     fallbackresource => '/index.php',
   }
   ~> package { ['expedition-beta', 'expeditionml-dependencies-beta']:
@@ -191,11 +193,11 @@ class expedition (
   }
   ~> file_line { 'db_password':
     path  => '/home/userSpace/userDefinitions.php',
-    line  => "define ('DBPass', '${myql_root_password}');",
+    line  => "define ('DBPass', '${mysql_root_password}');",
     match => '^define (\'DBPass',
+    }
+    ~> service { 'panReadOrders':
+      ensure => running,
+      enable => true,
+    }
   }
-  ~> service { 'panReadOrders':
-    ensure => running,
-    enable => true,
-  }
-}
